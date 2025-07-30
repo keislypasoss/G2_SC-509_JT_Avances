@@ -1,0 +1,67 @@
+<div class="container mt-5">
+    <h2 class="mb-4">Editar Residente</h2>
+
+    <form action="/residentes/actualizar/<%= residente._id %>" method="POST">
+        <div class="mb-3">
+            <label class="form-label">ID (Cédula)</label>
+            <input type="number" class="form-control" name="id" value="<%= residente.id %>" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-control" name="nombre" value="<%= residente.nombre %>" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Apellido</label>
+            <input type="text" class="form-control" name="apellido" value="<%= residente.apellido %>" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Género</label>
+            <select class="form-select" name="genero">
+                <option value="Masculino" <%= residente.genero === "Masculino" ? "selected" : "" %>>Masculino</option>
+                <option value="Femenino" <%= residente.genero === "Femenino" ? "selected" : "" %>>Femenino</option>
+                <option value="Otro" <%= residente.genero === "Otro" ? "selected" : "" %>>Otro</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Fecha de nacimiento</label>
+            <input type="date" class="form-control" name="fecha_nacimiento" value="<%= residente.fecha_nacimiento?.toISOString().substring(0,10) %>">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Fecha de ingreso</label>
+            <input type="date" class="form-control" name="fecha_ingreso" value="<%= residente.fecha_ingreso?.toISOString().substring(0,10) %>">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Contacto</label>
+            <input type="number" class="form-control" name="contacto" value="<%= residente.contacto %>">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Dirección</label>
+            <input type="text" class="form-control" name="direccion" value="<%= residente.direccion %>">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Estado de salud</label>
+            <input type="text" class="form-control" name="estado_salud" value="<%= residente.estado_salud %>">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Estado</label>
+            <select class="form-select" name="estado">
+                <option value="Activo" <%= residente.estado === "Activo" ? "selected" : "" %>>Activo</option>
+                <option value="Inactivo" <%= residente.estado === "Inactivo" ? "selected" : "" %>>Inactivo</option>
+            </select>
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-primary">Actualizar</button>
+            <a href="/residentes" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>

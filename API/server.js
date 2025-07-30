@@ -4,7 +4,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 //Formateo de los datos
 const bodyParse = require('body-parser');
-
+const app = express();
 //Rutas de la api
 const RouterFamiliar = require('./routers/FamiliarRourtes');
 const RouterHabitacion = require('./routers/HabitacionRourtes');
@@ -19,13 +19,22 @@ const RouterCitaMedica = require('./routers/CitaMedicaRourtes');
 const RouterHistorialMedico = require('./routers/HistorialMedicoRourtes');
 const RouterDonacion = require('./routers/DonacionRourtes');
 
+const expressLayouts = require('express-ejs-layouts');
+
+// Configuración de EJS
+const PersonalVistas = require('./routersView/PersonalVistas');
+app.use(express.urlencoded({ extended: true }));
+
+app.set('view engine', 'ejs');
+app.set('views', __dirname + '/views');
+app.use(expressLayouts);
+app.set('layout', 'layout'); 
 
 //asignacion de rutas
 //variables para el https o web
 const cors = require('cors');
 
 //se hace una instancia para que app sea el express
-const app = express();
 const PORT = 3000;
 
 
@@ -40,6 +49,10 @@ app.use(cors());
 app.use(bodyParse.json());
 
 
+//Ruras de vistas
+app.use('/personal', PersonalVistas);
+const ResidenteVistas = require('./routersView/ResidenteVistas');
+app.use('/residentes', ResidenteVistas);
 
 //Rutas del api
 
@@ -55,6 +68,12 @@ app.use('/api/voluntarios', RouterVoluntario)
 app.use('/api/citas_medicas', RouterCitaMedica)
 app.use('/api/historiales_medicos', RouterHistorialMedico)
 app.use('/api/donaciones', RouterDonacion)
+
+// Ruta principal: Menú inicial
+app.get('/', (req, res) => {
+  res.render('index');
+});
+
 
 //Ocupamos el servidor funcional
 app.listen(PORT, ()=> {

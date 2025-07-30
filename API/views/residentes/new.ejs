@@ -1,0 +1,50 @@
+<h2 class="my-4 text-center">Agregar Nuevo Residente</h2>
+
+<form action="/residentes/crear" method="POST" class="row g-3">
+  <div class="col-md-6">
+    <label class="form-label">ID:</label>
+    <input type="number" name="id" class="form-control" required>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">Nombre:</label>
+    <input type="text" name="nombre" class="form-control" required>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">Apellido:</label>
+    <input type="text" name="apellido" class="form-control" required>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">Género:</label>
+    <select name="genero" class="form-select">
+      <option value="Masculino">Masculino</option>
+      <option value="Femenino">Femenino</option>
+      <option value="Otro">Otro</option>
+    </select>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">Contacto:</label>
+    <input type="number" name="contacto" class="form-control">
+  </div>
+
+  <div class="col-md-12">
+    <label class="form-label">Dirección:</label>
+    <input type="text" name="direccion" class="form-control">
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">Estado:</label>
+    <select name="estado" class="form-select">
+      <option value="Activo">Activo</option>
+      <option value="Inactivo">Inactivo</option>
+    </select>
+  </div>
+
+  <div class="col-12 d-flex justify-content-between mt-4">
+    <a href="/residentes" class="btn btn-secondary">Cancelar</a>
+    <button type="submit" class="btn btn-success">Guardar</button>
+  </div>
+</form>
