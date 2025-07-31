@@ -19,16 +19,7 @@ const RouterCitaMedica = require('./routers/CitaMedicaRourtes');
 const RouterHistorialMedico = require('./routers/HistorialMedicoRourtes');
 const RouterDonacion = require('./routers/DonacionRourtes');
 
-const expressLayouts = require('express-ejs-layouts');
 
-// Configuración de EJS
-const PersonalVistas = require('./routersView/PersonalVistas');
-app.use(express.urlencoded({ extended: true }));
-
-app.set('view engine', 'ejs');
-app.set('views', __dirname + '/views');
-app.use(expressLayouts);
-app.set('layout', 'layout'); 
 
 //asignacion de rutas
 //variables para el https o web
@@ -49,11 +40,6 @@ app.use(cors());
 app.use(bodyParse.json());
 
 
-//Ruras de vistas
-app.use('/personal', PersonalVistas);
-const ResidenteVistas = require('./routersView/ResidenteVistas');
-app.use('/residentes', ResidenteVistas);
-
 //Rutas del api
 
 app.use('/api/familiares', RouterFamiliar)
@@ -69,10 +55,6 @@ app.use('/api/citas_medicas', RouterCitaMedica)
 app.use('/api/historiales_medicos', RouterHistorialMedico)
 app.use('/api/donaciones', RouterDonacion)
 
-// Ruta principal: Menú inicial
-app.get('/', (req, res) => {
-  res.render('index');
-});
 
 
 //Ocupamos el servidor funcional
