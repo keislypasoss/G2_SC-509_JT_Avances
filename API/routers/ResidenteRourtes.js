@@ -26,17 +26,19 @@ router.get('/', async (req, res) => {
 
 // GET: obtener un residente por su id (campo personalizado 'id')
 router.get('/:id', async (req, res) => {
-    try {
-        const residente = await Residente.findOne({ id: req.params.id });
-        if (residente) {
-            res.json(residente);
-        } else {
-            res.status(404).json({ error: "No se encontró el residente" });
-        }
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+  try {
+    const idNum = Number(req.params.id);
+    const residente = await Residente.findOne({ id: idNum });
+    if (residente) {
+      res.json(residente);
+    } else {
+      res.status(404).json({ error: "No se encontró el residente" });
     }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
+
 
 // PUT: actualizar un residente por su id
 router.put('/:id', async (req, res) => {
@@ -69,5 +71,6 @@ router.delete('/:id', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
 
 module.exports = router;

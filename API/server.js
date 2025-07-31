@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 //Formateo de los datos
 const bodyParse = require('body-parser');
 const app = express();
+const path = require('path');
+
 //Rutas de la api
 const RouterFamiliar = require('./routers/FamiliarRourtes');
 const RouterHabitacion = require('./routers/HabitacionRourtes');
@@ -38,7 +40,8 @@ mongoose.connect('mongodb://127.0.0.1:27017/hogar_ancianos',{
 //Middlewares el router del htpp
 app.use(cors());
 app.use(bodyParse.json());
-
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
 //Rutas del api
 
@@ -55,6 +58,9 @@ app.use('/api/citas_medicas', RouterCitaMedica)
 app.use('/api/historiales_medicos', RouterHistorialMedico)
 app.use('/api/donaciones', RouterDonacion)
 
+app.get('/', (req, res) => {
+  res.send('Servidor Express funcionando');
+});
 
 
 //Ocupamos el servidor funcional
