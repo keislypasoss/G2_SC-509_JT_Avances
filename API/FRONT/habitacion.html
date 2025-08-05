@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Gestión de Habitaciones</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+          <!-- Dentro del body -->
+<div id="menu-container"></div>
+
+<script>
+  fetch('menu.html')
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById('menu-container').innerHTML = html;
+    });
+</script>
+<div class="container my-5">
+  <h1 class="mb-4">Gestión de Habitaciones</h1>
+
+  <form id="formHabitacion">
+    <div class="row g-3">
+      <div class="col-md-2"><label>ID</label><input type="number" id="id" class="form-control" /></div>
+      <div class="col-md-2"><label>Número</label><input type="number" id="numero" class="form-control" /></div>
+      <div class="col-md-2"><label>Capacidad</label><input type="number" id="capacidad" class="form-control" /></div>
+      <div class="col-md-3">
+        <label>Estado</label>
+        <select id="estado" class="form-select">
+          <option value="">Seleccione</option>
+          <option>Ocupada</option>
+          <option>Disponible</option>
+          <option>Mantenimiento</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label>ID Residente(s)</label>
+        <input type="text" id="residente" class="form-control" placeholder="Separar con comas si son varios">
+      </div>
+    </div>
+
+    <div class="mt-4 text-center">
+      <button type="button" id="guardar" class="btn btn-primary">Guardar</button>
+      <button type="button" id="actualizar" class="btn btn-success" style="display:none;">Actualizar</button>
+      <button type="button" onclick="limpiar()" class="btn btn-danger">Limpiar</button>
+    </div>
+  </form>
+
+  <div class="table-responsive mt-5">
+    <table class="table table-striped table-bordered">
+      <thead class="table-dark">
+        <tr>
+          <th>ID</th><th>Número</th><th>Capacidad</th><th>Estado</th><th>Residente(s)</th><th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyHabitacion"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const URL = 'http://localhost:3000/api/habitacion/';
+
+  function limpiar() {
+    $('#formHabitacion')[0].reset();
+    $('#guardar').show(); $('#actualizar').hide();
+  }
+
+  function cargar() {
+    $.get(URL, data => {
+      $('#tbodyHabitacion').empty();
+      data.forEach(h => {
+        const residentes = h.residente.map(r => r._id || r).join(', ');
+        $('#tbodyHabitacion').append(`
+          <tr>
+            <td>${h.id}</td>
+            <td>${h.numero}</td>
+            <td>${h.capacidad}</td>
+            <td>${h.estado}</td>
+            <td>${residentes}</td>
+            <td>
+              <button class="btn btn-sm btn-primary" onclick="editar(${h.id})">Editar</button>
+              <button class="btn btn-sm btn-danger" onclick="eliminar(${h.id})">Eliminar</button>
+            </td>
+          </tr>
+        `);
+      });
+    });
+  }
+
+  $('#guardar').click(() => {
+    const obj = {
+      id: $('#id').val(),
+      numero: $('#numero').val(),
+      capacidad: $('#capacidad').val(),
+      estado: $('#estado').val(),
+      residente: $('#residente').val().split(',').map(r => r.trim())
+    };
+
+    $.ajax({
+      url: URL,
+      type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify(obj),
+      success: () => { alert('Guardado!'); limpiar(); cargar(); },
+      error: e => alert('Error: ' + e.statusText)
+    });
+  });
+
+  window.editar = id => {
+    $.get(URL + id, h => {
+      $('#id').val(h.id);
+      $('#numero').val(h.numero);
+      $('#capacidad').val(h.capacidad);
+      $('#estado').val(h.estado);
+      $('#residente').val(h.residente.map(r => r._id || r).join(', '));
+      $('#guardar').hide(); $('#actualizar').show();
+    });
+  };
+
+  $('#actualizar').click(() => {
+    const obj = {
+      id: $('#id').val(),
+      numero: $('#numero').val(),
+      capacidad: $('#capacidad').val(),
+      estado: $('#estado').val(),
+      residente: $('#residente').val().split(',').map(r => r.trim())
+    };
+
+    $.ajax({
+      url: URL + obj.id,
+      type: 'PUT',
+      contentType: 'application/json',
+      data: JSON.stringify(obj),
+      success: () => { alert('Actualizado!'); limpiar(); cargar(); },
+      error: e => alert('Error: ' + e.statusText)
+    });
+  });
+
+  window.eliminar = id => {
+    if(confirm('¿Eliminar habitación con ID ' + id + '?')) {
+      $.ajax({
+        url: URL + id,
+        type: 'DELETE',
+        success: () => { cargar(); },
+        error: e => alert('Error: ' + e.statusText)
+      });
+    }
+  };
+
+  $(document).ready(cargar);
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

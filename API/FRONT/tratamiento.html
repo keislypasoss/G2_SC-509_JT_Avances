@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Gestión de Tratamientos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+    <!-- Dentro del body -->
+<div id="menu-container"></div>
+
+<script>
+  fetch('menu.html')
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById('menu-container').innerHTML = html;
+    });
+</script>
+<div class="container my-5">
+  <h1 class="mb-4">Gestión de Tratamientos</h1>
+
+  <form id="formTratamiento">
+    <div class="row g-3">
+      <div class="col-md-2"><label>ID</label><input type="number" id="id" class="form-control" /></div>
+      <div class="col-md-2"><label>ID Residente</label><input type="text" id="residente" class="form-control" required /></div>
+      <div class="col-md-2"><label>ID Medicamento</label><input type="text" id="medicamento" class="form-control" required /></div>
+      <div class="col-md-2"><label>Dosis</label><input type="text" id="dosis" class="form-control" /></div>
+      <div class="col-md-2"><label>Frecuencia</label><input type="text" id="frecuencia" class="form-control" /></div>
+      <div class="col-md-2"><label>Vía Adm.</label><input type="text" id="via_administracion" class="form-control" /></div>
+
+      <div class="col-md-2"><label>Fecha Inicio</label><input type="date" id="fecha_inicio" class="form-control" required /></div>
+      <div class="col-md-2"><label>Fecha Fin</label><input type="date" id="fecha_fin" class="form-control" /></div>
+      <div class="col-md-4"><label>Observaciones</label><input type="text" id="observaciones" class="form-control" /></div>
+      <div class="col-md-2"><label>ID Personal</label><input type="text" id="personal_asignado" class="form-control" /></div>
+      <div class="col-md-2">
+        <label>Estado</label>
+        <select id="estado" class="form-select">
+          <option value="">Seleccione</option>
+          <option>Activo</option>
+          <option>Finalizado</option>
+          <option>Suspendido</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mt-4 text-center">
+      <button type="button" id="guardar" class="btn btn-primary">Guardar</button>
+      <button type="button" id="actualizar" class="btn btn-success" style="display:none;">Actualizar</button>
+      <button type="button" onclick="limpiar()" class="btn btn-danger">Limpiar</button>
+    </div>
+  </form>
+
+  <div class="table-responsive mt-5">
+    <table class="table table-striped table-bordered">
+      <thead class="table-dark">
+        <tr>
+          <th>ID</th>
+          <th>Residente</th>
+          <th>Medicamento</th>
+          <th>Dosis</th>
+          <th>Frecuencia</th>
+          <th>Vía Adm.</th>
+          <th>Inicio</th>
+          <th>Fin</th>
+          <th>Observaciones</th>
+          <th>Personal</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyTratamiento"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const URL = 'http://localhost:3000/api/tratamiento/';
+
+  function limpiar() {
+    $('#formTratamiento')[0].reset();
+    $('#guardar').show(); $('#actualizar').hide();
+  }
+
+  function cargar() {
+    $.get(URL, data => {
+      $('#tbodyTratamiento').empty();
+      data.forEach(t => {
+        $('#tbodyTratamiento').append(`
+          <tr>
+            <td>${t.id}</td>
+            <td>${t.residente?._id || t.residente}</td>
+            <td>${t.medicamento?._id || t.medicamento}</td>
+            <td>${t.dosis || ''}</td>
+            <td>${t.frecuencia || ''}</td>
+            <td>${t.via_administracion || ''}</td>
+            <td>${t.fecha_inicio?.substring(0,10) || ''}</td>
+            <td>${t.fecha_fin?.substring(0,10) || ''}</td>
+            <td>${t.observaciones || ''}</td>
+            <td>${t.personal_asignado?._id || t.personal_asignado || ''}</td>
+            <td>${t.estado || ''}</td>
+            <td>
+              <button class="btn btn-sm btn-primary" onclick="editar(${t.id})">Editar</button>
+              <button class="btn btn-sm btn-danger" onclick="eliminar(${t.id})">Eliminar</button>
+            </td>
+          </tr>
+        `);
+      });
+    });
+  }
+
+  $('#guardar').click(() => {
+    const obj = {
+      id: $('#id').val(),
+      residente: $('#residente').val(),
+      medicamento: $('#medicamento').val(),
+      dosis: $('#dosis').val(),
+      frecuencia: $('#frecuencia').val(),
+      via_administracion: $('#via_administracion').val(),
+      fecha_inicio: $('#fecha_inicio').val(),
+      fecha_fin: $('#fecha_fin').val(),
+      observaciones: $('#observaciones').val(),
+      personal_asignado: $('#personal_asignado').val(),
+      estado: $('#estado').val()
+    };
+
+    $.ajax({
+      url: URL,
+      type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify(obj),
+      success: () => { alert('Guardado!'); limpiar(); cargar(); },
+      error: e => alert('Error: ' + e.statusText)
+    });
+  });
+
+  window.editar = id => {
+    $.get(URL + id, t => {
+      $('#id').val(t.id);
+      $('#residente').val(t.residente?._id || t.residente);
+      $('#medicamento').val(t.medicamento?._id || t.medicamento);
+      $('#dosis').val(t.dosis);
+      $('#frecuencia').val(t.frecuencia);
+      $('#via_administracion').val(t.via_administracion);
+      $('#fecha_inicio').val(t.fecha_inicio?.substring(0,10));
+      $('#fecha_fin').val(t.fecha_fin?.substring(0,10));
+      $('#observaciones').val(t.observaciones);
+      $('#personal_asignado').val(t.personal_asignado?._id || t.personal_asignado);
+      $('#estado').val(t.estado);
+      $('#guardar').hide(); $('#actualizar').show();
+    });
+  };
+
+  $('#actualizar').click(() => {
+    const obj = {
+      id: $('#id').val(),
+      residente: $('#residente').val(),
+      medicamento: $('#medicamento').val(),
+      dosis: $('#dosis').val(),
+      frecuencia: $('#frecuencia').val(),
+      via_administracion: $('#via_administracion').val(),
+      fecha_inicio: $('#fecha_inicio').val(),
+      fecha_fin: $('#fecha_fin').val(),
+      observaciones: $('#observaciones').val(),
+      personal_asignado: $('#personal_asignado').val(),
+      estado: $('#estado').val()
+    };
+
+    $.ajax({
+      url: URL + obj.id,
+      type: 'PUT',
+      contentType: 'application/json',
+      data: JSON.stringify(obj),
+      success: () => { alert('Actualizado!'); limpiar(); cargar(); },
+      error: e => alert('Error: ' + e.statusText)
+    });
+  });
+
+  window.eliminar = id => {
+    if(confirm('¿Eliminar tratamiento con ID ' + id + '?')) {
+      $.ajax({
+        url: URL + id,
+        type: 'DELETE',
+        success: () => { cargar(); },
+        error: e => alert('Error: ' + e.statusText)
+      });
+    }
+  };
+
+  $(document).ready(cargar);
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

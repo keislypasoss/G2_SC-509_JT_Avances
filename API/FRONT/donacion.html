@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Gestión de Donaciones</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+
+<!-- Menú cargado dinámicamente -->
+<div id="menu-container"></div>
+<script>
+  fetch('menu.html')
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById('menu-container').innerHTML = html;
+    });
+</script>
+
+<div class="container my-5">
+  <h1 class="mb-4">Gestión de Donaciones</h1>
+
+  <form id="formDonacion">
+    <div class="row g-3">
+      <div class="col-md-2"><label>ID</label><input type="number" id="id" class="form-control" required /></div>
+      <div class="col-md-3"><label>Tipo</label><input type="text" id="tipo" class="form-control" required /></div>
+      <div class="col-md-3"><label>Donante</label><input type="text" id="donante" class="form-control" required /></div>
+      <div class="col-md-2"><label>Fecha</label><input type="date" id="fecha" class="form-control" required /></div>
+      <div class="col-md-2"><label>Cantidad</label><input type="number" id="cantidad" class="form-control" required /></div>
+      <div class="col-md-12"><label>Descripción</label><input type="text" id="descripcion" class="form-control" /></div>
+    </div>
+
+    <div class="mt-4 text-center">
+      <button type="button" id="guardar" class="btn btn-primary">Guardar</button>
+      <button type="button" id="actualizar" class="btn btn-success" style="display:none;">Actualizar</button>
+      <button type="button" onclick="limpiar()" class="btn btn-danger">Limpiar</button>
+    </div>
+  </form>
+
+  <div class="table-responsive mt-5">
+    <table class="table table-striped table-bordered">
+      <thead class="table-dark">
+        <tr>
+          <th>ID</th>
+          <th>Tipo</th>
+          <th>Donante</th>
+          <th>Fecha</th>
+          <th>Cantidad</th>
+          <th>Descripción</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyDonacion"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const URL = 'http://localhost:3000/api/donacion/';
+
+  function limpiar() {
+    $('#formDonacion')[0].reset();
+    $('#guardar').show(); $('#actualizar').hide();
+  }
+
+  function cargar() {
+    $.get(URL, data => {
+      $('#tbodyDonacion').empty();
+      data.forEach(d => {
+        $('#tbodyDonacion').append(`
+          <tr>
+            <td>${d.id}</td>
+            <td>${d.tipo}</td>
+            <td>${d.donante}</td>
+            <td>${d.fecha?.substring(0, 10) || ''}</td>
+            <td>${d.cantidad}</td>
+            <td>${d.descripcion || ''}</td>
+            <td>
+              <button class="btn btn-sm btn-primary" onclick="editar(${d.id})">Editar</button>
+              <button class="btn btn-sm btn-danger" onclick="eliminar(${d.id})">Eliminar</button>
+            </td>
+          </tr>
+        `);
+      });
+    });
+  }
+
+  $('#guardar').click(() => {
+    const obj = {
+      id: $('#id').val(),
+      tipo: $('#tipo').val(),
+      donante: $('#donante').val(),
+      fecha: $('#fecha').val(),
+      cantidad: $('#cantidad').val(),
+      descripcion: $('#descripcion').val()
+    };
+
+    $.ajax({
+      url: URL,
+      type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify(obj),
+      success: () => { alert('Guardado!'); limpiar(); cargar(); },
+      error: e => alert('Error: ' + e.statusText)
+    });
+  });
+
+  window.editar = id => {
+    $.get(URL + id, d => {
+      $('#id').val(d.id);
+      $('#tipo').val(d.tipo);
+      $('#donante').val(d.donante);
+      $('#fecha').val(d.fecha?.substring(0, 10));
+      $('#cantidad').val(d.cantidad);
+      $('#descripcion').val(d.descripcion);
+      $('#guardar').hide(); $('#actualizar').show();
+    });
+  };
+
+  $('#actualizar').click(() => {
+    const obj = {
+      id: $('#id').val(),
+      tipo: $('#tipo').val(),
+      donante: $('#donante').val(),
+      fecha: $('#fecha').val(),
+      cantidad: $('#cantidad').val(),
+      descripcion: $('#descripcion').val()
+    };
+
+    $.ajax({
+      url: URL + obj.id,
+      type: 'PUT',
+      contentType: 'application/json',
+      data: JSON.stringify(obj),
+      success: () => { alert('Actualizado!'); limpiar(); cargar(); },
+      error: e => alert('Error: ' + e.statusText)
+    });
+  });
+
+  window.eliminar = id => {
+    if(confirm('¿Eliminar donación con ID ' + id + '?')) {
+      $.ajax({
+        url: URL + id,
+        type: 'DELETE',
+        success: () => { cargar(); },
+        error: e => alert('Error: ' + e.statusText)
+      });
+    }
+  };
+
+  $(document).ready(cargar);
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
