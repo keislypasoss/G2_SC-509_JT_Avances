@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Citas Médicas</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div id="menu"></div>
+    <div class="container mt-5">
+        <h1 class="mb-4">Gestión de Citas Médicas</h1>
+        <form id="formulario">
+            <div class="row mb-3">
+                <div class="col-md-2">
+                    <label for="id" class="form-label">ID</label>
+                    <input type="number" class="form-control" id="id">
+                </div>
+                <div class="col-md-2">
+                    <label for="residente" class="form-label">ID Residente</label>
+                    <input type="text" class="form-control" id="residente">
+                </div>
+                <div class="col-md-2">
+                    <label for="fecha" class="form-label">Fecha</label>
+                    <input type="date" class="form-control" id="fecha">
+                </div>
+                <div class="col-md-2">
+                    <label for="hora" class="form-label">Hora</label>
+                    <input type="time" class="form-control" id="hora">
+                </div>
+                <div class="col-md-4">
+                    <label for="motivo" class="form-label">Motivo</label>
+                    <input type="text" class="form-control" id="motivo" placeholder="ej. control general, chequeo de rutina">
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label for="profesional_salud" class="form-label">ID Profesional de Salud</label>
+                    <input type="text" class="form-control" id="profesional_salud" placeholder="ej. 203, 105">
+                </div>
+                <div class="col-md-4">
+                    <label for="estado" class="form-label">Estado</label>
+                    <select class="form-select" id="estado">
+                        <option value="">Seleccione Estado</option>
+                        <option value="Programada">Programada</option>
+                        <option value="Completada">Completada</option>
+                        <option value="Cancelada">Cancelada</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row mb-5">
+                <div class="col text-center">
+                    <button type="submit" class="btn btn-primary me-2">Guardar</button>
+                    <button type="button" class="btn btn-danger" onclick="limpiar()">Limpiar</button>
+                </div>
+            </div>
+        </form>
+
+        <table class="table table-bordered table-striped mt-3">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Residente</th>
+                    <th>Fecha</th>
+                    <th>Hora</th>
+                    <th>Motivo</th>
+                    <th>Profesional</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tabla"></tbody>
+        </table>
+    </div>
+
+    <script>
+        $(document).ready(() => {
+            fetch('menu.html')
+                .then(res => res.text())
+                .then(html => $('#menu').html(html));
+
+            cargarCitas();
+
+            $('#formulario').submit(async (e) => {
+                e.preventDefault();
+                const cita = {
+                    id: $('#id').val(),
+                    residente: $('#residente').val(),
+                    fecha: $('#fecha').val(),
+                    hora: $('#hora').val(),
+                    motivo: $('#motivo').val(),
+                    profesional_salud: $('#profesional_salud').val(),
+                    estado: $('#estado').val(),
+                };
+                const method = cita.id ? 'PUT' : 'POST';
+                const url = `/api/citas_medicas${method === 'PUT' ? '/' + cita.id : ''}`;
+                await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cita)
+                });
+                limpiar();
+                cargarCitas();
+            });
+        });
+
+        async function cargarCitas() {
+            const datos = await (await fetch('/api/citas_medicas')).json();
+            $('#tabla').html(datos.map(c => `
+                <tr>
+                    <td>${c.id}</td>
+                    <td>${c.residente || ''}</td>
+                    <td>${c.fecha?.substring(0,10)}</td>
+                    <td>${c.hora}</td>
+                    <td>${c.motivo}</td>
+                    <td>${c.profesional_salud || ''}</td>
+                    <td>${c.estado}</td>
+                    <td>
+                        <button class='btn btn-sm btn-warning' onclick='editar(${JSON.stringify(c)})'>Editar</button>
+                        <button class='btn btn-sm btn-danger' onclick='eliminar(${c.id})'>Eliminar</button>
+                    </td>
+                </tr>
+            `).join(''));
+        }
+
+        function editar(c) {
+            $('#id').val(c.id);
+            $('#residente').val(c.residente);
+            $('#fecha').val(c.fecha?.substring(0,10));
+            $('#hora').val(c.hora);
+            $('#motivo').val(c.motivo);
+            $('#profesional_salud').val(c.profesional_salud);
+            $('#estado').val(c.estado);
+        }
+
+        async function eliminar(id) {
+            await fetch(`/api/citas_medicas/${id}`, { method: 'DELETE' });
+            cargarCitas();
+        }
+
+        function limpiar() {
+            $('#formulario')[0].reset();
+        }
+    </script>
+</body>
+</html>

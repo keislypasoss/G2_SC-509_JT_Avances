@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gestión de Historial Médico</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+  <div id="menu"></div>
+  <div class="container mt-5">
+    <h1 class="mb-4">Gestión de Historial Médico</h1>
+
+    <form id="formulario">
+      <div class="row mb-3">
+        <div class="col-md-2">
+          <label for="id" class="form-label">ID</label>
+          <input type="number" class="form-control" id="id" />
+        </div>
+        <div class="col-md-4">
+          <label for="residente" class="form-label">Residente</label>
+          <input type="text" class="form-control" id="residente"/>
+        </div>
+        <div class="col-md-6">
+          <label for="tratamientos_anteriores" class="form-label">Tratamientos Anteriores</label>
+          <textarea class="form-control" id="tratamientos_anteriores" rows="2"></textarea>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="diagnosticos" class="form-label">Diagnósticos</label>
+        <input type="text" class="form-control" id="diagnosticos" placeholder="Ej: Diabetes, Hipertensión" />
+      </div>
+
+      <div class="mb-3">
+        <label for="notas_medicas" class="form-label">Notas Médicas</label>
+        <textarea class="form-control" id="notas_medicas" rows="3"></textarea>
+      </div>
+
+      <div class="mb-3">
+        <label for="fecha_actualizacion" class="form-label">Fecha Actualización</label>
+        <input type="date" class="form-control" id="fecha_actualizacion" />
+      </div>
+
+      <div class="text-center mb-4">
+        <button type="submit" class="btn btn-primary me-2">Guardar</button>
+        <button type="button" class="btn btn-danger" onclick="limpiar()">Limpiar</button>
+      </div>
+    </form>
+
+    <table class="table table-bordered table-striped">
+      <thead class="table-dark">
+        <tr>
+          <th>ID</th>
+          <th>Residente</th>
+          <th>Diagnósticos</th>
+          <th>Tratamientos Anteriores</th>
+          <th>Notas Médicas</th>
+          <th>Fecha Actualización</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla"></tbody>
+    </table>
+  </div>
+
+  <script>
+    $(document).ready(() => {
+      fetch('menu.html')
+        .then(res => res.text())
+        .then(html => $('#menu').html(html));
+
+      cargarListas();
+      cargarHistoriales();
+
+      $('#formulario').submit(async (e) => {
+        e.preventDefault();
+        const historial = {
+          id: $('#id').val(),
+          residente: $('#residente').val(),
+          tratamientos_anteriores: $('#tratamientos_anteriores').val(),
+          diagnosticos: $('#diagnosticos').val().split(',').map(x => x.trim()),
+          notas_medicas: $('#notas_medicas').val(),
+          fecha_actualizacion: $('#fecha_actualizacion').val(),
+        };
+
+        const method = historial.id ? 'PUT' : 'POST';
+        const url = `/api/historiales_medicos${method === 'PUT' ? '/' + historial.id : ''}`;
+        await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(historial),
+        });
+
+        limpiar();
+        cargarHistoriales();
+      });
+    });
+
+    async function cargarListas() {
+      const residentes = await fetch('/api/residentes').then(r => r.json());
+      $('#residente').html('<option value="">Seleccione un residente</option>' + residentes.map(r =>
+        `<option value="${r._id}">${r.nombre} ${r.apellidos}</option>`
+      ).join(''));
+
+      const tratamientos = await fetch('/api/tratamientos').then(r => r.json());
+      $('#tratamientos_anteriores').html(tratamientos.map(t =>
+        `<option value="${t._id}">${t.descripcion || 'Tratamiento sin descripción'}</option>`
+      ).join(''));
+    }
+
+    async function cargarHistoriales() {
+      const datos = await fetch('/api/historiales_medicos').then(r => r.json());
+      $('#tabla').html(datos.map(h => `
+        <tr>
+          <td>${h.id}</td>
+          <td>${h.residente?.nombre || ''}</td>
+          <td>${h.diagnosticos?.join(', ')}</td>
+          <td>${h.tratamientos_anteriores?.map(t => t.descripcion).join(', ')}</td>
+          <td>${h.notas_medicas}</td>
+          <td>${h.fecha_actualizacion?.substring(0, 10)}</td>
+          <td>
+            <button class="btn btn-sm btn-warning" onclick='editar(${JSON.stringify(h)})'>Editar</button>
+            <button class="btn btn-sm btn-danger" onclick='eliminar(${h.id})'>Eliminar</button>
+          </td>
+        </tr>
+      `).join(''));
+    }
+
+    function editar(h) {
+      $('#id').val(h.id);
+      $('#residente').val(h.residente?._id);
+      $('#diagnosticos').val(h.diagnosticos?.join(', '));
+      $('#tratamientos_anteriores').val(h.tratamientos_anteriores?.map(t => t._id));
+      $('#notas_medicas').val(h.notas_medicas);
+      $('#fecha_actualizacion').val(h.fecha_actualizacion?.substring(0, 10));
+    }
+
+    async function eliminar(id) {
+      await fetch(`/api/historiales_medicos/${id}`, { method: 'DELETE' });
+      cargarHistoriales();
+    }
+
+    function limpiar() {
+      $('#formulario')[0].reset();
+    }
+  </script>
+</body>
+</html>

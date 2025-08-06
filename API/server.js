@@ -41,7 +41,7 @@ mongoose.connect('mongodb://127.0.0.1:27017/hogar_ancianos',{
 app.use(cors());
 app.use(bodyParse.json());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'FRONT')));
 
 //Rutas del api
 
