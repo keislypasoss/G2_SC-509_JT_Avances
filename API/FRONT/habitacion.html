@@ -37,7 +37,7 @@
       </div>
       <div class="col-md-3">
         <label>ID Residente(s)</label>
-        <input type="text" id="residente" class="form-control" placeholder="Separar con comas si son varios">
+       <select id="residentes" class="form-select"><option value="">Seleccione un residente</option></select>
       </div>
     </div>
 
@@ -61,83 +61,94 @@
 </div>
 
 <script>
-  const URL = 'http://localhost:3000/api/habitacion/';
+  const URL = 'http://localhost:3000/api/habitaciones/';
 
   function limpiar() {
     $('#formHabitacion')[0].reset();
     $('#guardar').show(); $('#actualizar').hide();
   }
 
-  function cargar() {
-    $.get(URL, data => {
-      $('#tbodyHabitacion').empty();
-      data.forEach(h => {
-        const residentes = h.residente.map(r => r._id || r).join(', ');
-        $('#tbodyHabitacion').append(`
-          <tr>
-            <td>${h.id}</td>
-            <td>${h.numero}</td>
-            <td>${h.capacidad}</td>
-            <td>${h.estado}</td>
-            <td>${residentes}</td>
-            <td>
-              <button class="btn btn-sm btn-primary" onclick="editar(${h.id})">Editar</button>
-              <button class="btn btn-sm btn-danger" onclick="eliminar(${h.id})">Eliminar</button>
-            </td>
-          </tr>
-        `);
-      });
-    });
-  }
+function cargar() {
+  $.get(URL, data => {
+    $('#tbodyHabitacion').empty();
+    data.forEach(h => {
+      // Mapear residentes para mostrar nombre y apellido si están poblados,
+      // si no, mostrar solo el ID (por si viene solo el id)
+      const residentes = h.residentes && h.residentes.length > 0
+        ? h.residentes.map(r => (r.nombre && r.apellido) ? `${r.nombre} ${r.apellido}` : r._id || r).join(', ')
+        : 'Sin residentes';
 
-  $('#guardar').click(() => {
-    const obj = {
-      id: $('#id').val(),
-      numero: $('#numero').val(),
-      capacidad: $('#capacidad').val(),
-      estado: $('#estado').val(),
-      residente: $('#residente').val().split(',').map(r => r.trim())
-    };
-
-    $.ajax({
-      url: URL,
-      type: 'POST',
-      contentType: 'application/json',
-      data: JSON.stringify(obj),
-      success: () => { alert('Guardado!'); limpiar(); cargar(); },
-      error: e => alert('Error: ' + e.statusText)
+      $('#tbodyHabitacion').append(`
+        <tr>
+          <td>${h.id}</td>
+          <td>${h.numero}</td>
+          <td>${h.capacidad}</td>
+          <td>${h.estado}</td>
+          <td>${residentes}</td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="editar(${h.id})">Editar</button>
+            <button class="btn btn-sm btn-danger" onclick="eliminar(${h.id})">Eliminar</button>
+          </td>
+        </tr>
+      `);
     });
   });
+}
 
-  window.editar = id => {
-    $.get(URL + id, h => {
-      $('#id').val(h.id);
-      $('#numero').val(h.numero);
-      $('#capacidad').val(h.capacidad);
-      $('#estado').val(h.estado);
-      $('#residente').val(h.residente.map(r => r._id || r).join(', '));
-      $('#guardar').hide(); $('#actualizar').show();
-    });
+
+ $('#guardar').click(() => {
+  const obj = {
+    id: $('#id').val(),
+    numero: $('#numero').val(),
+    capacidad: $('#capacidad').val(),
+    estado: $('#estado').val(),
+    residentes: $('#residentes').val() // <-- esto ya es un array
   };
 
-  $('#actualizar').click(() => {
-    const obj = {
-      id: $('#id').val(),
-      numero: $('#numero').val(),
-      capacidad: $('#capacidad').val(),
-      estado: $('#estado').val(),
-      residente: $('#residente').val().split(',').map(r => r.trim())
-    };
-
-    $.ajax({
-      url: URL + obj.id,
-      type: 'PUT',
-      contentType: 'application/json',
-      data: JSON.stringify(obj),
-      success: () => { alert('Actualizado!'); limpiar(); cargar(); },
-      error: e => alert('Error: ' + e.statusText)
-    });
+  $.ajax({
+    url: URL,
+    type: 'POST',
+    contentType: 'application/json',
+    data: JSON.stringify(obj),
+    success: () => { alert('Guardado!'); limpiar(); cargar(); },
+    error: e => alert('Error: ' + e.statusText)
   });
+});
+
+$('#actualizar').click(() => {
+  const obj = {
+    id: $('#id').val(),
+    numero: $('#numero').val(),
+    capacidad: $('#capacidad').val(),
+    estado: $('#estado').val(),
+    residentes: $('#residentes').val()
+  };
+
+  $.ajax({
+    url: URL + obj.id,
+    type: 'PUT',
+    contentType: 'application/json',
+    data: JSON.stringify(obj),
+    success: () => { alert('Actualizado!'); limpiar(); cargar(); },
+    error: e => alert('Error: ' + e.statusText)
+  });
+});
+
+
+ window.editar = id => {
+  $.get(URL + id, h => {
+    $('#id').val(h.id);
+    $('#numero').val(h.numero);
+    $('#capacidad').val(h.capacidad);
+    $('#estado').val(h.estado);
+    $('#residentes').val(h.residentes.map(r => r._id || r)); // selección múltiple
+    $('#guardar').hide(); $('#actualizar').show();
+  });
+};
+
+
+ 
+
 
   window.eliminar = id => {
     if(confirm('¿Eliminar habitación con ID ' + id + '?')) {
@@ -149,8 +160,20 @@
       });
     }
   };
+  function cargarResidentes() {
+  $.get('http://localhost:3000/api/residentes', data => {
+    $('#residentes').empty();
+    data.forEach(r => {
+      $('#residentes').append(`<option value="${r._id}">${r.nombre} ${r.apellido}</option>`);
+    });
+  });
+}
 
-  $(document).ready(cargar);
+
+$(document).ready(() => {
+  cargar();
+  cargarResidentes(); // <- muy importante
+});
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

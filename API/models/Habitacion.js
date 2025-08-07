@@ -7,7 +7,7 @@ const HabitacionSchema = new mongoose.Schema(
         numero: { type: Number },       
         capacidad: { type: Number },     
         estado: { type: String }, 
-        residente: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Residente' }]
+        residentes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Residente' }]
     }
 );
 

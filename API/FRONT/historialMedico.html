@@ -27,9 +27,13 @@
   <form id="formHistorial">
     <div class="row g-3">
       <div class="col-md-2"><label>ID</label><input type="number" id="id" class="form-control" /></div>
-      <div class="col-md-4"><label>ID Residente</label><input type="text" id="residente" class="form-control" /></div>
-      <div class="col-md-6"><label>Diagnósticos (separados por coma)</label><input type="text" id="diagnosticos" class="form-control" /></div>
-      <div class="col-md-6"><label>Tratamientos Anteriores (IDs separados por coma)</label><input type="text" id="tratamientos" class="form-control" /></div>
+      <div class="col-md-4">
+      <label for="residente">Residente</label><select id="residente" class="form-control"></select></div>
+       <div class="col-md-6"><label>Diagnósticos (separados por coma)</label><input type="text" id="diagnosticos" class="form-control" /></div>
+      <div class="col-md-6">
+      <label>Tratamientos Anteriores</label>
+      <select id="tratamientos" class="form-control" multiple></select>
+      </div>
       <div class="col-md-6"><label>Notas Médicas</label><input type="text" id="notas" class="form-control" /></div>
       <div class="col-md-3"><label>Fecha Actualización</label><input type="date" id="fecha" class="form-control" /></div>
     </div>
@@ -56,7 +60,7 @@
 
 <!-- Lógica con jQuery -->
 <script>
-  const URL = 'http://localhost:3000/api/historialmedico/';
+  const URL = 'http://localhost:3000/api/historiales_medicos/';
 
   function limpiar() {
     $('#formHistorial')[0].reset();
@@ -70,7 +74,7 @@
         $('#tbodyHistorial').append(`
           <tr>
             <td>${h.id}</td>
-            <td>${h.residente}</td>
+            <td>${h.residente?.nombre || h.residente}</td>
             <td>${h.diagnosticos ? h.diagnosticos.join(', ') : ''}</td>
             <td>${h.fecha_actualizacion ? h.fecha_actualizacion.split('T')[0] : ''}</td>
             <td>
@@ -88,7 +92,7 @@
       id: $('#id').val(),
       residente: $('#residente').val(),
       diagnosticos: $('#diagnosticos').val().split(',').map(d => d.trim()).filter(d => d),
-      tratamientos_anteriores: $('#tratamientos').val().split(',').map(t => t.trim()).filter(t => t),
+      tratamientos_anteriores: $('#tratamientos').val(), 
       notas_medicas: $('#notas').val(),
       fecha_actualizacion: $('#fecha').val()
     };
@@ -104,23 +108,33 @@
   });
 
   window.editar = id => {
-    $.get(URL + id, h => {
-      $('#id').val(h.id);
-      $('#residente').val(h.residente);
-      $('#diagnosticos').val(h.diagnosticos ? h.diagnosticos.join(', ') : '');
-      $('#tratamientos').val(h.tratamientos_anteriores ? h.tratamientos_anteriores.join(', ') : '');
-      $('#notas').val(h.notas_medicas);
-      $('#fecha').val(h.fecha_actualizacion ? h.fecha_actualizacion.split('T')[0] : '');
-      $('#guardar').hide(); $('#actualizar').show();
-    });
-  };
+  $.get(URL + id, h => {
+    $('#id').val(h.id);
+    $('#residente').val(h.residente);
+    $('#diagnosticos').val(h.diagnosticos ? h.diagnosticos.join(', ') : '');
+
+    if (h.tratamientos_anteriores && Array.isArray(h.tratamientos_anteriores)) {
+      // Puede que tratamientos_anteriores sea array de objetos o IDs
+      const ids = h.tratamientos_anteriores.map(t => typeof t === 'object' ? t._id : t);
+      $('#tratamientos').val(ids);
+    } else {
+      $('#tratamientos').val([]);
+    }
+
+    $('#notas').val(h.notas_medicas);
+    $('#fecha').val(h.fecha_actualizacion ? h.fecha_actualizacion.split('T')[0] : '');
+    $('#guardar').hide(); 
+    $('#actualizar').show();
+  });
+};
+
 
   $('#actualizar').click(() => {
     const obj = {
       id: $('#id').val(),
       residente: $('#residente').val(),
       diagnosticos: $('#diagnosticos').val().split(',').map(d => d.trim()).filter(d => d),
-      tratamientos_anteriores: $('#tratamientos').val().split(',').map(t => t.trim()).filter(t => t),
+      tratamientos_anteriores: $('#tratamientos').val(), 
       notas_medicas: $('#notas').val(),
       fecha_actualizacion: $('#fecha').val()
     };
@@ -145,8 +159,36 @@
       });
     }
   };
+  function cargarOpcionesResidente() {
+  $.get('/api/residentes', data => {
+    const select = $('#residente');
+    select.empty();
+    select.append('<option value="">Seleccione un residente</option>');
+    data.forEach(r => {
+      select.append(`<option value="${r._id}">${r.nombre}</option>`);
+    });
+  });
+}
+function cargarOpcionesTratamientos() {
+  $.get('/api/tratamientos', data => {
+    const select = $('#tratamientos');
+    select.empty();
+    data.forEach(t => {
+      const nombre = t.medicamento?.nombre || t._id;
+      select.append(`<option value="${t._id}">${nombre}</option>`);
+    });
+  });
+}
 
-  $(document).ready(cargar);
+
+
+  $(document).ready(function () {
+  cargar();
+  cargarOpcionesResidente();
+  cargarOpcionesTratamientos();
+});
+
+
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

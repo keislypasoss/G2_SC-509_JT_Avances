@@ -24,8 +24,15 @@
   <form id="formTratamiento">
     <div class="row g-3">
       <div class="col-md-2"><label>ID</label><input type="number" id="id" class="form-control" /></div>
-      <div class="col-md-2"><label>ID Residente</label><input type="text" id="residente" class="form-control" required /></div>
-      <div class="col-md-2"><label>ID Medicamento</label><input type="text" id="medicamento" class="form-control" required /></div>
+      <div class="col-md-2">
+        <label>ID Residente</label>
+        <select id="residente" class="form-select" required><option value="">Seleccione un residente</option></select>
+      </div>
+
+      <div class="col-md-2">
+        <label>ID Medicamento</label>
+          <select id="medicamento" class="form-select" required><option value="">Seleccione un medicamento</option></select></div>
+
       <div class="col-md-2"><label>Dosis</label><input type="text" id="dosis" class="form-control" /></div>
       <div class="col-md-2"><label>Frecuencia</label><input type="text" id="frecuencia" class="form-control" /></div>
       <div class="col-md-2"><label>Vía Adm.</label><input type="text" id="via_administracion" class="form-control" /></div>
@@ -33,7 +40,10 @@
       <div class="col-md-2"><label>Fecha Inicio</label><input type="date" id="fecha_inicio" class="form-control" required /></div>
       <div class="col-md-2"><label>Fecha Fin</label><input type="date" id="fecha_fin" class="form-control" /></div>
       <div class="col-md-4"><label>Observaciones</label><input type="text" id="observaciones" class="form-control" /></div>
-      <div class="col-md-2"><label>ID Personal</label><input type="text" id="personal_asignado" class="form-control" /></div>
+      <div class="col-md-2">
+      <label>ID Personal</label>
+        <select id="personal_asignado" class="form-select"><option value="">Seleccione un personal</option></select>
+      </div>
       <div class="col-md-2">
         <label>Estado</label>
         <select id="estado" class="form-select">
@@ -76,39 +86,42 @@
 </div>
 
 <script>
-  const URL = 'http://localhost:3000/api/tratamiento/';
+  const URL = 'http://localhost:3000/api/tratamientos/';
 
   function limpiar() {
     $('#formTratamiento')[0].reset();
     $('#guardar').show(); $('#actualizar').hide();
   }
 
-  function cargar() {
-    $.get(URL, data => {
-      $('#tbodyTratamiento').empty();
-      data.forEach(t => {
-        $('#tbodyTratamiento').append(`
-          <tr>
-            <td>${t.id}</td>
-            <td>${t.residente?._id || t.residente}</td>
-            <td>${t.medicamento?._id || t.medicamento}</td>
-            <td>${t.dosis || ''}</td>
-            <td>${t.frecuencia || ''}</td>
-            <td>${t.via_administracion || ''}</td>
-            <td>${t.fecha_inicio?.substring(0,10) || ''}</td>
-            <td>${t.fecha_fin?.substring(0,10) || ''}</td>
-            <td>${t.observaciones || ''}</td>
-            <td>${t.personal_asignado?._id || t.personal_asignado || ''}</td>
-            <td>${t.estado || ''}</td>
-            <td>
-              <button class="btn btn-sm btn-primary" onclick="editar(${t.id})">Editar</button>
-              <button class="btn btn-sm btn-danger" onclick="eliminar(${t.id})">Eliminar</button>
-            </td>
-          </tr>
-        `);
-      });
+
+
+function cargar() {
+  $.get(URL, data => {
+    $('#tbodyTratamiento').empty();
+    data.forEach(t => {
+      $('#tbodyTratamiento').append(`
+        <tr>
+          <td>${t.id}</td>
+          <td>${t.residente ? `${t.residente.nombre} ${t.residente.apellido || ''}` : t.residente || ''}</td>
+          <td>${t.medicamento ? t.medicamento.nombre || t.medicamento._id : ''}</td>
+          <td>${t.dosis || ''}</td>
+          <td>${t.frecuencia || ''}</td>
+          <td>${t.via_administracion || ''}</td>
+          <td>${t.fecha_inicio?.substring(0,10) || ''}</td>
+          <td>${t.fecha_fin?.substring(0,10) || ''}</td>
+          <td>${t.observaciones || ''}</td>
+          <td>${t.personal_asignado ? `${t.personal_asignado.nombre || ''} ${t.personal_asignado.apellido || ''}` : ''}</td>
+          <td>${t.estado || ''}</td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="editar(${t.id})">Editar</button>
+            <button class="btn btn-sm btn-danger" onclick="eliminar(${t.id})">Eliminar</button>
+          </td>
+        </tr>
+      `);
     });
-  }
+  });
+}
+
 
   $('#guardar').click(() => {
     const obj = {
@@ -135,22 +148,24 @@
     });
   });
 
-  window.editar = id => {
-    $.get(URL + id, t => {
-      $('#id').val(t.id);
-      $('#residente').val(t.residente?._id || t.residente);
-      $('#medicamento').val(t.medicamento?._id || t.medicamento);
-      $('#dosis').val(t.dosis);
-      $('#frecuencia').val(t.frecuencia);
-      $('#via_administracion').val(t.via_administracion);
-      $('#fecha_inicio').val(t.fecha_inicio?.substring(0,10));
-      $('#fecha_fin').val(t.fecha_fin?.substring(0,10));
-      $('#observaciones').val(t.observaciones);
-      $('#personal_asignado').val(t.personal_asignado?._id || t.personal_asignado);
-      $('#estado').val(t.estado);
-      $('#guardar').hide(); $('#actualizar').show();
-    });
-  };
+ window.editar = id => {
+  $.get(URL + id, t => {
+    $('#id').val(t.id);
+    $('#residente').val(t.residente?._id || t.residente);
+    $('#medicamento').val(t.medicamento?._id || t.medicamento);
+    $('#dosis').val(t.dosis);
+    $('#frecuencia').val(t.frecuencia);
+    $('#via_administracion').val(t.via_administracion);
+    $('#fecha_inicio').val(t.fecha_inicio?.substring(0,10));
+    $('#fecha_fin').val(t.fecha_fin?.substring(0,10));
+    $('#observaciones').val(t.observaciones);
+    $('#personal_asignado').val(t.personal_asignado?._id || t.personal_asignado);
+    $('#estado').val(t.estado);
+    $('#guardar').hide();
+    $('#actualizar').show();
+  });
+};
+
 
   $('#actualizar').click(() => {
     const obj = {
@@ -187,8 +202,46 @@
       });
     }
   };
+  function cargarPersonal() {
+  $.get('http://localhost:3000/api/personal', data => {
+    $('#personal_asignado').empty();
+    $('#personal_asignado').append('<option value="">Seleccione un personal</option>');
+    data.forEach(p => {
+      $('#personal_asignado').append(`<option value="${p._id}">${p.nombre} ${p.apellido || ''}</option>`);
+    });
+  });
+}
+function cargarResidentes() {
+  $.get('http://localhost:3000/api/residentes', data => {
+    $('#residente').empty();
+    $('#residente').append('<option value="">Seleccione un residente</option>');
+    data.forEach(r => {
+      $('#residente').append(`<option value="${r._id}">${r.nombre} ${r.apellido || ''}</option>`);
+    });
+  });
+}
 
-  $(document).ready(cargar);
+function cargarMedicamentos() {
+  $.get('http://localhost:3000/api/medicamentos', data => {
+    $('#medicamento').empty();
+    $('#medicamento').append('<option value="">Seleccione un medicamento</option>');
+    data.forEach(m => {
+      $('#medicamento').append(`<option value="${m._id}">${m.nombre}</option>`);
+    });
+  });
+}
+
+
+
+ $(document).ready(() => {
+  cargar();
+  cargarPersonal();
+  cargarResidentes();
+  cargarMedicamentos();
+});
+
+
+
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

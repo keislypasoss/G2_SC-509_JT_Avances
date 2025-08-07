@@ -8,9 +8,7 @@
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 <body>
-  <!-- Menú cargado dinámicamente -->
   <div id="menu-container"></div>
-
   <script>
     fetch('menu.html')
       .then(res => res.text())
@@ -47,10 +45,13 @@
           <label>Disponibilidad</label>
           <input type="text" id="disponibilidad" class="form-control" placeholder="Ej: Lunes, Miércoles, Viernes" />
         </div>
-        <div class="col-md-3">
-          <label>Actividades Realizadas (IDs, separados por coma)</label>
-          <input type="text" id="actividades_realizadas" class="form-control" placeholder="e.g. 123,456,789" />
+       
+        <div class="form-group">
+        <label>Actividades Realizadas</label>
+        <select class="form-control" id="actividades" multiple></select>
         </div>
+
+
         <div class="col-md-3">
           <label>Contacto (Teléfono)</label>
           <input type="number" id="contacto" class="form-control" />
@@ -80,117 +81,141 @@
             <th>ID</th><th>Nombre</th><th>Apellido</th><th>Especialidad</th><th>Disponibilidad</th><th>Actividades Realizadas</th><th>Contacto</th><th>Estado</th><th>Acciones</th>
           </tr>
         </thead>
-        <tbody id="tbodyVoluntario"></tbody>
+        <tbody id="tbodyVoluntarios"></tbody>
       </table>
     </div>
   </div>
 
-  <script>
-    const URL = 'http://localhost:3000/api/voluntario/';
+  <!-- Lógica con jQuery -->
+<script>
+  const URL = 'http://localhost:3000/api/voluntarios/';
 
-    function limpiar() {
-      $('#formVoluntario')[0].reset();
-      $('#guardar').show();
-      $('#actualizar').hide();
-    }
+  function limpiar() {
+    $('#formVoluntario')[0].reset();
+    $('#guardar').show();
+    $('#actualizar').hide();
+  }
 
-    function cargar() {
-      $.get(URL, data => {
-        $('#tbodyVoluntario').empty();
-        data.forEach(v => {
-          const actividades = (v.actividades_realizadas || []).map(a => a._id || a).join(', ');
-          $('#tbodyVoluntario').append(`
-            <tr>
-              <td>${v.id}</td>
-              <td>${v.nombre}</td>
-              <td>${v.apellido}</td>
-              <td>${v.especialidad}</td>
-              <td>${v.disponibilidad}</td>
-              <td>${actividades}</td>
-              <td>${v.contacto}</td>
-              <td>${v.estado}</td>
-              <td>
-                <button class="btn btn-sm btn-primary" onclick="editar(${v.id})">Editar</button>
-                <button class="btn btn-sm btn-danger" onclick="eliminar(${v.id})">Eliminar</button>
-              </td>
-            </tr>
-          `);
-        });
-      });
-    }
+  function cargar() {
+  $.get(URL, data => {
+    $('#tbodyVoluntarios').empty();
+    data.forEach(v => {
+      const actividades = Array.isArray(v.actividades_realizadas)
+        ? v.actividades_realizadas.map(a => a.nombre || a).join(', ')
+        : '';
+      $('#tbodyVoluntarios').append(`
+        <tr>
+          <td>${v.id}</td>
+          <td>${v.nombre}</td>
+          <td>${v.apellido}</td>
+          <td>${v.especialidad}</td>
+          <td>${v.disponibilidad}</td>
+          <td>${actividades}</td>
+          <td>${v.contacto}</td>
+          <td>${v.estado}</td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="editar(${v.id})">Editar</button>
+            <button class="btn btn-sm btn-danger" onclick="eliminar(${v.id})">Eliminar</button>
+          </td>
+        </tr>
+      `);
+    });
+  });
+}
 
-    $('#guardar').click(() => {
-      const obj = {
-        id: Number($('#id').val()),
-        nombre: $('#nombre').val(),
-        apellido: $('#apellido').val(),
-        especialidad: $('#especialidad').val(),
-        disponibilidad: $('#disponibilidad').val(),
-        actividades_realizadas: $('#actividades_realizadas').val().split(',').map(a => a.trim()).filter(a => a !== ''),
-        contacto: Number($('#contacto').val()),
-        estado: $('#estado').val()
-      };
 
+  $('#guardar').click(() => {
+  const obj = {
+    id: $('#id').val(),
+    nombre: $('#nombre').val(),
+    apellido: $('#apellido').val(),
+    especialidad: $('#especialidad').val(),
+    disponibilidad: $('#disponibilidad').val(),
+    contacto: $('#contacto').val(),
+    estado: $('#estado').val(),
+    actividades_realizadas: $('#actividades').val() // IDs de actividades seleccionadas
+  };
+
+  $.ajax({
+    url: URL,
+    type: 'POST',
+    contentType: 'application/json',
+    data: JSON.stringify(obj),
+    success: () => { alert('Guardado con éxito'); limpiar(); cargar(); },
+    error: e => alert('Error: ' + e.statusText)
+  });
+});
+
+window.editar = id => {
+  $.get(URL + id, v => {
+    $('#id').val(v.id);
+    $('#nombre').val(v.nombre);
+    $('#apellido').val(v.apellido);
+    $('#especialidad').val(v.especialidad);
+    $('#disponibilidad').val(v.disponibilidad);
+    $('#contacto').val(v.contacto);
+    $('#estado').val(v.estado);
+
+    const actividades = Array.isArray(v.actividades_realizadas)
+      ? v.actividades_realizadas.map(a => typeof a === 'object' ? a._id : a)
+      : [];
+    $('#actividades').val(actividades);
+
+    $('#guardar').hide();
+    $('#actualizar').show();
+  });
+};
+
+$('#actualizar').click(() => {
+  const obj = {
+    id: $('#id').val(),
+    nombre: $('#nombre').val(),
+    apellido: $('#apellido').val(),
+    especialidad: $('#especialidad').val(),
+    disponibilidad: $('#disponibilidad').val(),
+    contacto: $('#contacto').val(),
+    estado: $('#estado').val(),
+    actividades_realizadas: $('#actividades').val()
+  };
+
+  $.ajax({
+    url: URL + obj.id,
+    type: 'PUT',
+    contentType: 'application/json',
+    data: JSON.stringify(obj),
+    success: () => { alert('Actualizado con éxito'); limpiar(); cargar(); },
+    error: e => alert('Error: ' + e.statusText)
+  });
+});
+
+
+  window.eliminar = id => {
+    if (confirm('¿Eliminar voluntario con ID ' + id + '?')) {
       $.ajax({
-        url: URL,
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify(obj),
-        success: () => { alert('Guardado!'); limpiar(); cargar(); },
+        url: URL + id,
+        type: 'DELETE',
+        success: () => cargar(),
         error: e => alert('Error: ' + e.statusText)
       });
-    });
+    }
+  };
 
-    window.editar = id => {
-      $.get(URL + id, v => {
-        $('#id').val(v.id);
-        $('#nombre').val(v.nombre);
-        $('#apellido').val(v.apellido);
-        $('#especialidad').val(v.especialidad);
-        $('#disponibilidad').val(v.disponibilidad);
-        $('#actividades_realizadas').val((v.actividades_realizadas || []).map(a => a._id || a).join(', '));
-        $('#contacto').val(v.contacto);
-        $('#estado').val(v.estado);
-        $('#guardar').hide();
-        $('#actualizar').show();
-      });
-    };
-
-    $('#actualizar').click(() => {
-      const obj = {
-        id: Number($('#id').val()),
-        nombre: $('#nombre').val(),
-        apellido: $('#apellido').val(),
-        especialidad: $('#especialidad').val(),
-        disponibilidad: $('#disponibilidad').val(),
-        actividades_realizadas: $('#actividades_realizadas').val().split(',').map(a => a.trim()).filter(a => a !== ''),
-        contacto: Number($('#contacto').val()),
-        estado: $('#estado').val()
-      };
-
-      $.ajax({
-        url: URL + obj.id,
-        type: 'PUT',
-        contentType: 'application/json',
-        data: JSON.stringify(obj),
-        success: () => { alert('Actualizado!'); limpiar(); cargar(); },
-        error: e => alert('Error: ' + e.statusText)
+  function cargarOpcionesActividades() {
+    $.get('/api/actividades', data => {
+      const select = $('#actividades');
+      select.empty();
+      data.forEach(a => {
+        select.append(`<option value="${a._id}">${a.nombre}</option>`);
       });
     });
+  }
 
-    window.eliminar = id => {
-      if(confirm('¿Eliminar voluntario con ID ' + id + '?')) {
-        $.ajax({
-          url: URL + id,
-          type: 'DELETE',
-          success: () => { cargar(); },
-          error: e => alert('Error: ' + e.statusText)
-        });
-      }
-    };
+  $(document).ready(function () {
+    cargar();
+    cargarOpcionesActividades();
+  });
+</script>
 
-    $(document).ready(cargar);
-  </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>

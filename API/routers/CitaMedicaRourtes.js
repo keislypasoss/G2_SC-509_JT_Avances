@@ -16,12 +16,15 @@ router.post('/', async (req, res) => {
 // GET: obtener todas las citas médicas
 router.get('/', async (req, res) => {
     try {
-        const citas = await CitaMedica.find();
+        const citas = await CitaMedica.find()
+            .populate('residente', 'nombre')  
+            .populate('profesional_salud', 'nombre'); 
         res.json(citas);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
+
 
 // GET: obtener una cita médica por ID personalizado
 router.get('/:id', async (req, res) => {

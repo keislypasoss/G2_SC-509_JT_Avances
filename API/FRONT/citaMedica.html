@@ -25,11 +25,11 @@
   <form id="formCita">
     <div class="row g-3">
       <div class="col-md-2"><label>ID</label><input type="number" id="id" class="form-control" /></div>
-      <div class="col-md-3"><label>ID Residente</label><input type="text" id="residente" class="form-control" /></div>
+      <label for="residente">Residente:</label><select id="residente" name="residente" class="form-control"></select>
       <div class="col-md-3"><label>Fecha</label><input type="date" id="fecha" class="form-control" /></div>
       <div class="col-md-2"><label>Hora</label><input type="time" id="hora" class="form-control" /></div>
       <div class="col-md-4"><label>Motivo</label><input type="text" id="motivo" class="form-control" /></div>
-      <div class="col-md-3"><label>ID Profesional Salud</label><input type="text" id="profesional_salud" class="form-control" /></div>
+      <label for="profesional">Profesional:</label><select id="profesional" name="profesional" class="form-control"></select>
       <div class="col-md-3">
         <label>Estado</label>
         <select id="estado" class="form-select">
@@ -52,7 +52,7 @@
     <table class="table table-striped table-bordered">
       <thead class="table-dark">
         <tr>
-          <th>ID</th><th>Fecha</th><th>Hora</th><th>Motivo</th><th>Estado</th><th>Acciones</th>
+          <th>ID</th><th>Residente</th><th>ID Profesional</th><th>Fecha</th><th>Hora</th><th>Motivo</th><th>Estado</th><th>Acciones</th>
         </tr>
       </thead>
       <tbody id="tbodyCita"></tbody>
@@ -61,7 +61,7 @@
 </div>
 
 <script>
-  const URL = 'http://localhost:3000/api/citamedica/';
+  const URL = 'http://localhost:3000/api/citas_medicas/';
 
   function limpiar() {
     $('#formCita')[0].reset();
@@ -69,26 +69,58 @@
   }
 
   function cargar() {
-    $.get(URL, data => {
-      $('#tbodyCita').empty();
-      data.forEach(c => {
-        $('#tbodyCita').append(`
-          <tr>
-            <td>${c.id}</td>
-            <td>${c.fecha ? new Date(c.fecha).toLocaleDateString() : ''}</td>
-            <td>${c.hora}</td>
-            <td>${c.motivo}</td>
-            <td>${c.estado}</td>
-            <td>
-              <button class="btn btn-sm btn-primary" onclick="editar(${c.id})">Editar</button>
-              <button class="btn btn-sm btn-danger" onclick="eliminar(${c.id})">Eliminar</button>
-            </td>
-          </tr>
-        `);
-      });
-    });
-  }
+  $.get(URL, data => {
+    $('#tbodyCita').empty();
+    console.log("Citas recibidas:", data); // 👈 Asegúrate de que llegan más de 2
+    data.forEach(c => {
+      const residente = c.residente?.nombre || 'Sin residente';
+      const profesional = c.profesional_salud?.nombre || 'Sin profesional';
 
+      $('#tbodyCita').append(`
+        <tr>
+          <td>${c.id || c._id}</td>
+          <td>${residente}</td>
+          <td>${profesional}</td>
+          <td>${c.fecha ? c.fecha.split('T')[0] : ''}</td>
+          <td>${c.hora}</td>
+          <td>${c.motivo}</td>
+          <td>${c.estado}</td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="editar('${c.id || c._id}')">Editar</button>
+            <button class="btn btn-sm btn-danger" onclick="eliminar('${c.id || c._id}')">Eliminar</button>
+          </td>
+        </tr>
+      `);
+    });
+  });
+}
+
+  $('#formularioFamiliar').submit(function (e) {
+  e.preventDefault();
+
+  const familiar = {
+    id: $('#id').val(),
+    nombre: $('#nombre').val(),
+    parentesco: $('#parentesco').val(),
+    telefono: $('#telefono').val(),
+    residente: $('#residenteSelect').val(),
+    personal: $('#personalSelect').val()
+  };
+
+  const metodo = familiar.id ? 'PUT' : 'POST';
+  const urlFinal = familiar.id ? `${URL}/${familiar.id}` : URL;
+
+  $.ajax({
+    url: urlFinal,
+    method: metodo,
+    contentType: 'application/json',
+    data: JSON.stringify(familiar),
+    success: function () {
+      cargar();
+      $('#formularioFamiliar')[0].reset();
+    }
+  });
+});
   $('#guardar').click(() => {
     const obj = {
       id: $('#id').val(),
@@ -96,7 +128,7 @@
       fecha: $('#fecha').val(),
       hora: $('#hora').val(),
       motivo: $('#motivo').val(),
-      profesional_salud: $('#profesional_salud').val(),
+      profesional_salud: $('#profesional').val(),
       estado: $('#estado').val()
     };
 
@@ -105,23 +137,30 @@
       type: 'POST',
       contentType: 'application/json',
       data: JSON.stringify(obj),
-      success: () => { alert('Guardado!'); limpiar(); cargar(); },
-      error: e => alert('Error: ' + e.statusText)
+      success: () => { 
+        alert('Cita guardada!');
+        limpiar();
+        cargar();
+      },
+      error: e => alert('Error: ' + e.responseText)
     });
   });
 
+
   window.editar = id => {
-    $.get(URL + id, c => {
-      $('#id').val(c.id);
-      $('#residente').val(c.residente);
-      $('#fecha').val(c.fecha ? c.fecha.split('T')[0] : '');
-      $('#hora').val(c.hora);
-      $('#motivo').val(c.motivo);
-      $('#profesional_salud').val(c.profesional_salud);
-      $('#estado').val(c.estado);
-      $('#guardar').hide(); $('#actualizar').show();
-    });
-  };
+  $.get(URL + id, c => {
+    $('#id').val(c.id);
+    $('#residente').val(c.residente._id || c.residente);
+    $('#fecha').val(c.fecha ? c.fecha.split('T')[0] : '');
+    $('#hora').val(c.hora);
+    $('#motivo').val(c.motivo);
+    $('#profesional').val(c.profesional_salud._id || c.profesional_salud);
+    $('#estado').val(c.estado);
+    $('#guardar').hide(); 
+    $('#actualizar').show();
+  });
+};
+
 
   $('#actualizar').click(() => {
     const obj = {
@@ -130,7 +169,7 @@
       fecha: $('#fecha').val(),
       hora: $('#hora').val(),
       motivo: $('#motivo').val(),
-      profesional_salud: $('#profesional_salud').val(),
+      profesional_salud: $('#profesional').val(),
       estado: $('#estado').val()
     };
 
@@ -154,8 +193,34 @@
       });
     }
   };
+  function cargarOpcionesProfesional() {
+  $.get('/api/personal', data => {
+    const select = $('#profesional');
+    select.empty();
+    data.forEach(p => {
+      select.append(`<option value="${p._id}">${p.nombre}</option>`);
+    });
+  });
+}
 
-  $(document).ready(cargar);
+function cargarOpcionesResidente() {
+  $.get('/api/residentes', data => { 
+    const select = $('#residente');
+    select.empty();
+    data.forEach(r => {
+      select.append(`<option value="${r._id}">${r.nombre}</option>`);
+    });
+  });
+}
+
+
+  $(document).ready(function() {
+  cargarOpcionesProfesional();
+  cargarOpcionesResidente();
+  cargar(); 
+});
+
+
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

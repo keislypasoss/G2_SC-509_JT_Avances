@@ -31,8 +31,14 @@
       <div class="col-md-6"><label>Descripción</label><input type="text" id="descripcion" class="form-control" /></div>
       <div class="col-md-3"><label>Fecha</label><input type="date" id="fecha" class="form-control" /></div>
       <div class="col-md-4"><label>Lugar</label><input type="text" id="lugar" class="form-control" /></div>
-      <div class="col-md-5"><label>Residentes (IDs separados por coma)</label><input type="text" id="residentes" class="form-control" /></div>
-      <div class="col-md-5"><label>Personal (IDs separados por coma)</label><input type="text" id="personal" class="form-control" /></div>
+      <div class="col-md-5">
+        <label>Residentes</label>
+        <select id="residentes" class="form-select" multiple></select>
+      </div>
+      <div class="col-md-5">
+        <label>Personal</label>
+        <select id="personal" class="form-select" multiple></select>
+      </div>
       <div class="col-md-2">
         <label>Estado</label>
         <select id="estado" class="form-select">
@@ -67,11 +73,15 @@
 
 <!-- Lógica con jQuery -->
 <script>
-  const URL = 'http://localhost:3000/api/actividad/';
+  const URL = 'http://localhost:3000/api/actividades/';
 
   function limpiar() {
     $('#formActividad')[0].reset();
-    $('#guardar').show(); $('#actualizar').hide();
+    $('#guardar').show();
+    $('#actualizar').hide();
+    // Para limpiar selects múltiples también
+    $('#residentes').val(null);
+    $('#personal').val(null);
   }
 
   function cargar() {
@@ -80,9 +90,12 @@
       data.forEach(a => {
         $('#tbodyActividad').append(`
           <tr>
-            <td>${a.id}</td><td>${a.nombre}</td><td>${a.descripcion}</td>
+            <td>${a.id}</td>
+            <td>${a.nombre}</td>
+            <td>${a.descripcion}</td>
             <td>${a.fecha ? a.fecha.split('T')[0] : ''}</td>
-            <td>${a.lugar}</td><td>${a.estado}</td>
+            <td>${a.lugar}</td>
+            <td>${a.estado}</td>
             <td>
               <button class="btn btn-sm btn-primary" onclick="editar(${a.id})">Editar</button>
               <button class="btn btn-sm btn-danger" onclick="eliminar(${a.id})">Eliminar</button>
@@ -100,8 +113,8 @@
       descripcion: $('#descripcion').val(),
       fecha: $('#fecha').val(),
       lugar: $('#lugar').val(),
-      residentes: $('#residentes').val().split(',').map(r => r.trim()).filter(r => r),
-      personal: $('#personal').val().split(',').map(p => p.trim()).filter(p => p),
+      residentes: $('#residentes').val() || [],  // ¡array!
+      personal: $('#personal').val() || [],      // ¡array!
       estado: $('#estado').val()
     };
 
@@ -122,10 +135,12 @@
       $('#descripcion').val(a.descripcion);
       $('#fecha').val(a.fecha ? a.fecha.split('T')[0] : '');
       $('#lugar').val(a.lugar);
-      $('#residentes').val(a.residentes.join(', '));
-      $('#personal').val(a.personal.join(', '));
+      // Para selects múltiples, pasa array directamente a .val()
+      $('#residentes').val(a.residentes || []);
+      $('#personal').val(a.personal || []);
       $('#estado').val(a.estado);
-      $('#guardar').hide(); $('#actualizar').show();
+      $('#guardar').hide();
+      $('#actualizar').show();
     });
   };
 
@@ -136,8 +151,8 @@
       descripcion: $('#descripcion').val(),
       fecha: $('#fecha').val(),
       lugar: $('#lugar').val(),
-      residentes: $('#residentes').val().split(',').map(r => r.trim()).filter(r => r),
-      personal: $('#personal').val().split(',').map(p => p.trim()).filter(p => p),
+      residentes: $('#residentes').val() || [],  // ¡array!
+      personal: $('#personal').val() || [],      // ¡array!
       estado: $('#estado').val()
     };
 
@@ -162,7 +177,31 @@
     }
   };
 
-  $(document).ready(cargar);
+  function cargarResidentes() {
+    $.get('http://localhost:3000/api/residentes', data => {
+      const select = $('#residentes');
+      select.empty();
+      data.forEach(r => {
+        select.append(`<option value="${r._id}">${r.nombre} ${r.apellido || ''}</option>`);
+      });
+    });
+  }
+
+  function cargarPersonal() {
+    $.get('http://localhost:3000/api/personal', data => {
+      const select = $('#personal');
+      select.empty();
+      data.forEach(p => {
+        select.append(`<option value="${p._id}">${p.nombre} ${p.apellido || ''}</option>`);
+      });
+    });
+  }
+
+  $(document).ready(() => {
+    cargar();
+    cargarResidentes();
+    cargarPersonal();
+  });
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
